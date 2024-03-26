@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css"><link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script><script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="data/BangliAgriKebun_1.js"></script>
+        <script src="data/BangliAgriLadang_2.js"></script>
+        <script src="data/BangliAgriSawah_3.js"></script>
+        <script src="data/Bangli_4.js"></script>
+        <script src="data/BulelengAgriKebun_5.js"></script>
+        <script src="data/BulelengAgriLadang_6.js"></script>
+        <script src="data/BulelengAgriSawah_7.js"></script>
+        <script src="data/Buleleng_8.js"></script>
+        <script src="data/DenpasarAgriKebun_9.js"></script>
+        <script src="data/DenpasarAgriLadang_10.js"></script>
+        <script src="data/DenpasarAgriSawah_11.js"></script>
+        <script src="data/Denpasar_12.js"></script>
+        <script src="data/GianyarAgriKebun_13.js"></script>
+        <script src="data/GianyarAgriLadang_14.js"></script>
+        <script src="data/GianyarAgriSawah_15.js"></script>
+        <script src="data/Gianyar_16.js"></script>
+        <script src="data/JembranaAgriKebun_17.js"></script>
+        <script src="data/JembranaAgriLadang_18.js"></script>
+        <script src="data/JembranaAgriSawah_19.js"></script>
+        <script src="data/Jembrana_20.js"></script>
+        <script src="data/KarangasemAgriKebun_21.js"></script>
+        <script src="data/KarangasemAgriLadang_22.js"></script>
+        <script src="data/KarangasemAgriSawah_23.js"></script>
+        <script src="data/Karangasem_24.js"></script>
+        <script src="data/KlungkungAgriKebun_25.js"></script>
+        <script src="data/KlungkungAgriLadang_26.js"></script>
+        <script src="data/KlungkungAgriSawah_27.js"></script>
+        <script src="data/Klungkung_28.js"></script>
+        <script src="data/BadungAgriKebun_29.js"></script>
+        <script src="data/BadungAgriLadang_30.js"></script>
+        <script src="data/BadungAgriSawah_31.js"></script>
+        <script src="data/Badung_32.js"></script>
+        <script src="data/TabananAgriKebun_33.js"></script>
+        <script src="data/TabananAgriLadang_34.js"></script>
+        <script src="data/TabananAgriSawah_35.js"></script>
+        <script src="data/Tabanan_36.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[-8.881159788353436,114.24101358647893],[-7.962991551353518,115.97483066223707]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+          var tagName = event.target.tagName,
+            popup = map._popup;
+          // Also check if flag is already set.
+          if (tagName === "IMG" && popup && !popup._updated) {
+            popup._updated = true; // Set flag to prevent looping.
+            popup.update();
+          }
+        }, true);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_GoogleSatellite_0');
+        map.getPane('pane_GoogleSatellite_0').style.zIndex = 400;
+        var layer_GoogleSatellite_0 = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            pane: 'pane_GoogleSatellite_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_GoogleSatellite_0;
+        map.addLayer(layer_GoogleSatellite_0);
+        function pop_BangliAgriKebun_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BangliAgriKebun_1_0() {
+            return {
+                pane: 'pane_BangliAgriKebun_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BangliAgriKebun_1');
+        map.getPane('pane_BangliAgriKebun_1').style.zIndex = 401;
+        map.getPane('pane_BangliAgriKebun_1').style['mix-blend-mode'] = 'normal';
+        var layer_BangliAgriKebun_1 = new L.geoJson(json_BangliAgriKebun_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BangliAgriKebun_1',
+            layerName: 'layer_BangliAgriKebun_1',
+            pane: 'pane_BangliAgriKebun_1',
+            onEachFeature: pop_BangliAgriKebun_1,
+            style: style_BangliAgriKebun_1_0,
+        });
+        bounds_group.addLayer(layer_BangliAgriKebun_1);
+        map.addLayer(layer_BangliAgriKebun_1);
+        function pop_BangliAgriLadang_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BangliAgriLadang_2_0() {
+            return {
+                pane: 'pane_BangliAgriLadang_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BangliAgriLadang_2');
+        map.getPane('pane_BangliAgriLadang_2').style.zIndex = 402;
+        map.getPane('pane_BangliAgriLadang_2').style['mix-blend-mode'] = 'normal';
+        var layer_BangliAgriLadang_2 = new L.geoJson(json_BangliAgriLadang_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BangliAgriLadang_2',
+            layerName: 'layer_BangliAgriLadang_2',
+            pane: 'pane_BangliAgriLadang_2',
+            onEachFeature: pop_BangliAgriLadang_2,
+            style: style_BangliAgriLadang_2_0,
+        });
+        bounds_group.addLayer(layer_BangliAgriLadang_2);
+        map.addLayer(layer_BangliAgriLadang_2);
+        function pop_BangliAgriSawah_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BangliAgriSawah_3_0() {
+            return {
+                pane: 'pane_BangliAgriSawah_3',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BangliAgriSawah_3');
+        map.getPane('pane_BangliAgriSawah_3').style.zIndex = 403;
+        map.getPane('pane_BangliAgriSawah_3').style['mix-blend-mode'] = 'normal';
+        var layer_BangliAgriSawah_3 = new L.geoJson(json_BangliAgriSawah_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BangliAgriSawah_3',
+            layerName: 'layer_BangliAgriSawah_3',
+            pane: 'pane_BangliAgriSawah_3',
+            onEachFeature: pop_BangliAgriSawah_3,
+            style: style_BangliAgriSawah_3_0,
+        });
+        bounds_group.addLayer(layer_BangliAgriSawah_3);
+        map.addLayer(layer_BangliAgriSawah_3);
+        function pop_Bangli_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Bangli_4_0() {
+            return {
+                pane: 'pane_Bangli_4',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,0.36470588235294116)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Bangli_4');
+        map.getPane('pane_Bangli_4').style.zIndex = 404;
+        map.getPane('pane_Bangli_4').style['mix-blend-mode'] = 'normal';
+        var layer_Bangli_4 = new L.geoJson(json_Bangli_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Bangli_4',
+            layerName: 'layer_Bangli_4',
+            pane: 'pane_Bangli_4',
+            onEachFeature: pop_Bangli_4,
+            style: style_Bangli_4_0,
+        });
+        bounds_group.addLayer(layer_Bangli_4);
+        map.addLayer(layer_Bangli_4);
+        function pop_BulelengAgriKebun_5(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BulelengAgriKebun_5_0() {
+            return {
+                pane: 'pane_BulelengAgriKebun_5',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BulelengAgriKebun_5');
+        map.getPane('pane_BulelengAgriKebun_5').style.zIndex = 405;
+        map.getPane('pane_BulelengAgriKebun_5').style['mix-blend-mode'] = 'normal';
+        var layer_BulelengAgriKebun_5 = new L.geoJson(json_BulelengAgriKebun_5, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BulelengAgriKebun_5',
+            layerName: 'layer_BulelengAgriKebun_5',
+            pane: 'pane_BulelengAgriKebun_5',
+            onEachFeature: pop_BulelengAgriKebun_5,
+            style: style_BulelengAgriKebun_5_0,
+        });
+        bounds_group.addLayer(layer_BulelengAgriKebun_5);
+        map.addLayer(layer_BulelengAgriKebun_5);
+        function pop_BulelengAgriLadang_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BulelengAgriLadang_6_0() {
+            return {
+                pane: 'pane_BulelengAgriLadang_6',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BulelengAgriLadang_6');
+        map.getPane('pane_BulelengAgriLadang_6').style.zIndex = 406;
+        map.getPane('pane_BulelengAgriLadang_6').style['mix-blend-mode'] = 'normal';
+        var layer_BulelengAgriLadang_6 = new L.geoJson(json_BulelengAgriLadang_6, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BulelengAgriLadang_6',
+            layerName: 'layer_BulelengAgriLadang_6',
+            pane: 'pane_BulelengAgriLadang_6',
+            onEachFeature: pop_BulelengAgriLadang_6,
+            style: style_BulelengAgriLadang_6_0,
+        });
+        bounds_group.addLayer(layer_BulelengAgriLadang_6);
+        map.addLayer(layer_BulelengAgriLadang_6);
+        function pop_BulelengAgriSawah_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BulelengAgriSawah_7_0() {
+            return {
+                pane: 'pane_BulelengAgriSawah_7',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BulelengAgriSawah_7');
+        map.getPane('pane_BulelengAgriSawah_7').style.zIndex = 407;
+        map.getPane('pane_BulelengAgriSawah_7').style['mix-blend-mode'] = 'normal';
+        var layer_BulelengAgriSawah_7 = new L.geoJson(json_BulelengAgriSawah_7, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BulelengAgriSawah_7',
+            layerName: 'layer_BulelengAgriSawah_7',
+            pane: 'pane_BulelengAgriSawah_7',
+            onEachFeature: pop_BulelengAgriSawah_7,
+            style: style_BulelengAgriSawah_7_0,
+        });
+        bounds_group.addLayer(layer_BulelengAgriSawah_7);
+        map.addLayer(layer_BulelengAgriSawah_7);
+        function pop_Buleleng_8(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Buleleng_8_0() {
+            return {
+                pane: 'pane_Buleleng_8',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,113,88,0.4235294117647059)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Buleleng_8');
+        map.getPane('pane_Buleleng_8').style.zIndex = 408;
+        map.getPane('pane_Buleleng_8').style['mix-blend-mode'] = 'normal';
+        var layer_Buleleng_8 = new L.geoJson(json_Buleleng_8, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Buleleng_8',
+            layerName: 'layer_Buleleng_8',
+            pane: 'pane_Buleleng_8',
+            onEachFeature: pop_Buleleng_8,
+            style: style_Buleleng_8_0,
+        });
+        bounds_group.addLayer(layer_Buleleng_8);
+        map.addLayer(layer_Buleleng_8);
+        function pop_DenpasarAgriKebun_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_DenpasarAgriKebun_9_0() {
+            return {
+                pane: 'pane_DenpasarAgriKebun_9',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_DenpasarAgriKebun_9');
+        map.getPane('pane_DenpasarAgriKebun_9').style.zIndex = 409;
+        map.getPane('pane_DenpasarAgriKebun_9').style['mix-blend-mode'] = 'normal';
+        var layer_DenpasarAgriKebun_9 = new L.geoJson(json_DenpasarAgriKebun_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_DenpasarAgriKebun_9',
+            layerName: 'layer_DenpasarAgriKebun_9',
+            pane: 'pane_DenpasarAgriKebun_9',
+            onEachFeature: pop_DenpasarAgriKebun_9,
+            style: style_DenpasarAgriKebun_9_0,
+        });
+        bounds_group.addLayer(layer_DenpasarAgriKebun_9);
+        map.addLayer(layer_DenpasarAgriKebun_9);
+        function pop_DenpasarAgriLadang_10(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_DenpasarAgriLadang_10_0() {
+            return {
+                pane: 'pane_DenpasarAgriLadang_10',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_DenpasarAgriLadang_10');
+        map.getPane('pane_DenpasarAgriLadang_10').style.zIndex = 410;
+        map.getPane('pane_DenpasarAgriLadang_10').style['mix-blend-mode'] = 'normal';
+        var layer_DenpasarAgriLadang_10 = new L.geoJson(json_DenpasarAgriLadang_10, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_DenpasarAgriLadang_10',
+            layerName: 'layer_DenpasarAgriLadang_10',
+            pane: 'pane_DenpasarAgriLadang_10',
+            onEachFeature: pop_DenpasarAgriLadang_10,
+            style: style_DenpasarAgriLadang_10_0,
+        });
+        bounds_group.addLayer(layer_DenpasarAgriLadang_10);
+        map.addLayer(layer_DenpasarAgriLadang_10);
+        function pop_DenpasarAgriSawah_11(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_DenpasarAgriSawah_11_0() {
+            return {
+                pane: 'pane_DenpasarAgriSawah_11',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_DenpasarAgriSawah_11');
+        map.getPane('pane_DenpasarAgriSawah_11').style.zIndex = 411;
+        map.getPane('pane_DenpasarAgriSawah_11').style['mix-blend-mode'] = 'normal';
+        var layer_DenpasarAgriSawah_11 = new L.geoJson(json_DenpasarAgriSawah_11, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_DenpasarAgriSawah_11',
+            layerName: 'layer_DenpasarAgriSawah_11',
+            pane: 'pane_DenpasarAgriSawah_11',
+            onEachFeature: pop_DenpasarAgriSawah_11,
+            style: style_DenpasarAgriSawah_11_0,
+        });
+        bounds_group.addLayer(layer_DenpasarAgriSawah_11);
+        map.addLayer(layer_DenpasarAgriSawah_11);
+        function pop_Denpasar_12(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Denpasar_12_0() {
+            return {
+                pane: 'pane_Denpasar_12',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(243,166,178,0.30196078431372547)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Denpasar_12');
+        map.getPane('pane_Denpasar_12').style.zIndex = 412;
+        map.getPane('pane_Denpasar_12').style['mix-blend-mode'] = 'normal';
+        var layer_Denpasar_12 = new L.geoJson(json_Denpasar_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Denpasar_12',
+            layerName: 'layer_Denpasar_12',
+            pane: 'pane_Denpasar_12',
+            onEachFeature: pop_Denpasar_12,
+            style: style_Denpasar_12_0,
+        });
+        bounds_group.addLayer(layer_Denpasar_12);
+        map.addLayer(layer_Denpasar_12);
+        function pop_GianyarAgriKebun_13(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_GianyarAgriKebun_13_0() {
+            return {
+                pane: 'pane_GianyarAgriKebun_13',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_GianyarAgriKebun_13');
+        map.getPane('pane_GianyarAgriKebun_13').style.zIndex = 413;
+        map.getPane('pane_GianyarAgriKebun_13').style['mix-blend-mode'] = 'normal';
+        var layer_GianyarAgriKebun_13 = new L.geoJson(json_GianyarAgriKebun_13, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_GianyarAgriKebun_13',
+            layerName: 'layer_GianyarAgriKebun_13',
+            pane: 'pane_GianyarAgriKebun_13',
+            onEachFeature: pop_GianyarAgriKebun_13,
+            style: style_GianyarAgriKebun_13_0,
+        });
+        bounds_group.addLayer(layer_GianyarAgriKebun_13);
+        map.addLayer(layer_GianyarAgriKebun_13);
+        function pop_GianyarAgriLadang_14(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_GianyarAgriLadang_14_0() {
+            return {
+                pane: 'pane_GianyarAgriLadang_14',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_GianyarAgriLadang_14');
+        map.getPane('pane_GianyarAgriLadang_14').style.zIndex = 414;
+        map.getPane('pane_GianyarAgriLadang_14').style['mix-blend-mode'] = 'normal';
+        var layer_GianyarAgriLadang_14 = new L.geoJson(json_GianyarAgriLadang_14, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_GianyarAgriLadang_14',
+            layerName: 'layer_GianyarAgriLadang_14',
+            pane: 'pane_GianyarAgriLadang_14',
+            onEachFeature: pop_GianyarAgriLadang_14,
+            style: style_GianyarAgriLadang_14_0,
+        });
+        bounds_group.addLayer(layer_GianyarAgriLadang_14);
+        map.addLayer(layer_GianyarAgriLadang_14);
+        function pop_GianyarAgriSawah_15(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_GianyarAgriSawah_15_0() {
+            return {
+                pane: 'pane_GianyarAgriSawah_15',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_GianyarAgriSawah_15');
+        map.getPane('pane_GianyarAgriSawah_15').style.zIndex = 415;
+        map.getPane('pane_GianyarAgriSawah_15').style['mix-blend-mode'] = 'normal';
+        var layer_GianyarAgriSawah_15 = new L.geoJson(json_GianyarAgriSawah_15, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_GianyarAgriSawah_15',
+            layerName: 'layer_GianyarAgriSawah_15',
+            pane: 'pane_GianyarAgriSawah_15',
+            onEachFeature: pop_GianyarAgriSawah_15,
+            style: style_GianyarAgriSawah_15_0,
+        });
+        bounds_group.addLayer(layer_GianyarAgriSawah_15);
+        map.addLayer(layer_GianyarAgriSawah_15);
+        function pop_Gianyar_16(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Gianyar_16_0() {
+            return {
+                pane: 'pane_Gianyar_16',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,255,23,0.3843137254901961)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Gianyar_16');
+        map.getPane('pane_Gianyar_16').style.zIndex = 416;
+        map.getPane('pane_Gianyar_16').style['mix-blend-mode'] = 'normal';
+        var layer_Gianyar_16 = new L.geoJson(json_Gianyar_16, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Gianyar_16',
+            layerName: 'layer_Gianyar_16',
+            pane: 'pane_Gianyar_16',
+            onEachFeature: pop_Gianyar_16,
+            style: style_Gianyar_16_0,
+        });
+        bounds_group.addLayer(layer_Gianyar_16);
+        map.addLayer(layer_Gianyar_16);
+        function pop_JembranaAgriKebun_17(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_JembranaAgriKebun_17_0() {
+            return {
+                pane: 'pane_JembranaAgriKebun_17',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_JembranaAgriKebun_17');
+        map.getPane('pane_JembranaAgriKebun_17').style.zIndex = 417;
+        map.getPane('pane_JembranaAgriKebun_17').style['mix-blend-mode'] = 'normal';
+        var layer_JembranaAgriKebun_17 = new L.geoJson(json_JembranaAgriKebun_17, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_JembranaAgriKebun_17',
+            layerName: 'layer_JembranaAgriKebun_17',
+            pane: 'pane_JembranaAgriKebun_17',
+            onEachFeature: pop_JembranaAgriKebun_17,
+            style: style_JembranaAgriKebun_17_0,
+        });
+        bounds_group.addLayer(layer_JembranaAgriKebun_17);
+        map.addLayer(layer_JembranaAgriKebun_17);
+        function pop_JembranaAgriLadang_18(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_JembranaAgriLadang_18_0() {
+            return {
+                pane: 'pane_JembranaAgriLadang_18',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_JembranaAgriLadang_18');
+        map.getPane('pane_JembranaAgriLadang_18').style.zIndex = 418;
+        map.getPane('pane_JembranaAgriLadang_18').style['mix-blend-mode'] = 'normal';
+        var layer_JembranaAgriLadang_18 = new L.geoJson(json_JembranaAgriLadang_18, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_JembranaAgriLadang_18',
+            layerName: 'layer_JembranaAgriLadang_18',
+            pane: 'pane_JembranaAgriLadang_18',
+            onEachFeature: pop_JembranaAgriLadang_18,
+            style: style_JembranaAgriLadang_18_0,
+        });
+        bounds_group.addLayer(layer_JembranaAgriLadang_18);
+        map.addLayer(layer_JembranaAgriLadang_18);
+        function pop_JembranaAgriSawah_19(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_JembranaAgriSawah_19_0() {
+            return {
+                pane: 'pane_JembranaAgriSawah_19',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_JembranaAgriSawah_19');
+        map.getPane('pane_JembranaAgriSawah_19').style.zIndex = 419;
+        map.getPane('pane_JembranaAgriSawah_19').style['mix-blend-mode'] = 'normal';
+        var layer_JembranaAgriSawah_19 = new L.geoJson(json_JembranaAgriSawah_19, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_JembranaAgriSawah_19',
+            layerName: 'layer_JembranaAgriSawah_19',
+            pane: 'pane_JembranaAgriSawah_19',
+            onEachFeature: pop_JembranaAgriSawah_19,
+            style: style_JembranaAgriSawah_19_0,
+        });
+        bounds_group.addLayer(layer_JembranaAgriSawah_19);
+        map.addLayer(layer_JembranaAgriSawah_19);
+        function pop_Jembrana_20(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Jembrana_20_0() {
+            return {
+                pane: 'pane_Jembrana_20',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(31,120,180,0.403921568627451)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Jembrana_20');
+        map.getPane('pane_Jembrana_20').style.zIndex = 420;
+        map.getPane('pane_Jembrana_20').style['mix-blend-mode'] = 'normal';
+        var layer_Jembrana_20 = new L.geoJson(json_Jembrana_20, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Jembrana_20',
+            layerName: 'layer_Jembrana_20',
+            pane: 'pane_Jembrana_20',
+            onEachFeature: pop_Jembrana_20,
+            style: style_Jembrana_20_0,
+        });
+        bounds_group.addLayer(layer_Jembrana_20);
+        map.addLayer(layer_Jembrana_20);
+        function pop_KarangasemAgriKebun_21(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KarangasemAgriKebun_21_0() {
+            return {
+                pane: 'pane_KarangasemAgriKebun_21',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KarangasemAgriKebun_21');
+        map.getPane('pane_KarangasemAgriKebun_21').style.zIndex = 421;
+        map.getPane('pane_KarangasemAgriKebun_21').style['mix-blend-mode'] = 'normal';
+        var layer_KarangasemAgriKebun_21 = new L.geoJson(json_KarangasemAgriKebun_21, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KarangasemAgriKebun_21',
+            layerName: 'layer_KarangasemAgriKebun_21',
+            pane: 'pane_KarangasemAgriKebun_21',
+            onEachFeature: pop_KarangasemAgriKebun_21,
+            style: style_KarangasemAgriKebun_21_0,
+        });
+        bounds_group.addLayer(layer_KarangasemAgriKebun_21);
+        map.addLayer(layer_KarangasemAgriKebun_21);
+        function pop_KarangasemAgriLadang_22(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KarangasemAgriLadang_22_0() {
+            return {
+                pane: 'pane_KarangasemAgriLadang_22',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KarangasemAgriLadang_22');
+        map.getPane('pane_KarangasemAgriLadang_22').style.zIndex = 422;
+        map.getPane('pane_KarangasemAgriLadang_22').style['mix-blend-mode'] = 'normal';
+        var layer_KarangasemAgriLadang_22 = new L.geoJson(json_KarangasemAgriLadang_22, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KarangasemAgriLadang_22',
+            layerName: 'layer_KarangasemAgriLadang_22',
+            pane: 'pane_KarangasemAgriLadang_22',
+            onEachFeature: pop_KarangasemAgriLadang_22,
+            style: style_KarangasemAgriLadang_22_0,
+        });
+        bounds_group.addLayer(layer_KarangasemAgriLadang_22);
+        map.addLayer(layer_KarangasemAgriLadang_22);
+        function pop_KarangasemAgriSawah_23(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KarangasemAgriSawah_23_0() {
+            return {
+                pane: 'pane_KarangasemAgriSawah_23',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KarangasemAgriSawah_23');
+        map.getPane('pane_KarangasemAgriSawah_23').style.zIndex = 423;
+        map.getPane('pane_KarangasemAgriSawah_23').style['mix-blend-mode'] = 'normal';
+        var layer_KarangasemAgriSawah_23 = new L.geoJson(json_KarangasemAgriSawah_23, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KarangasemAgriSawah_23',
+            layerName: 'layer_KarangasemAgriSawah_23',
+            pane: 'pane_KarangasemAgriSawah_23',
+            onEachFeature: pop_KarangasemAgriSawah_23,
+            style: style_KarangasemAgriSawah_23_0,
+        });
+        bounds_group.addLayer(layer_KarangasemAgriSawah_23);
+        map.addLayer(layer_KarangasemAgriSawah_23);
+        function pop_Karangasem_24(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Karangasem_24_0() {
+            return {
+                pane: 'pane_Karangasem_24',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(147,28,207,0.16862745098039217)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Karangasem_24');
+        map.getPane('pane_Karangasem_24').style.zIndex = 424;
+        map.getPane('pane_Karangasem_24').style['mix-blend-mode'] = 'normal';
+        var layer_Karangasem_24 = new L.geoJson(json_Karangasem_24, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Karangasem_24',
+            layerName: 'layer_Karangasem_24',
+            pane: 'pane_Karangasem_24',
+            onEachFeature: pop_Karangasem_24,
+            style: style_Karangasem_24_0,
+        });
+        bounds_group.addLayer(layer_Karangasem_24);
+        map.addLayer(layer_Karangasem_24);
+        function pop_KlungkungAgriKebun_25(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KlungkungAgriKebun_25_0() {
+            return {
+                pane: 'pane_KlungkungAgriKebun_25',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KlungkungAgriKebun_25');
+        map.getPane('pane_KlungkungAgriKebun_25').style.zIndex = 425;
+        map.getPane('pane_KlungkungAgriKebun_25').style['mix-blend-mode'] = 'normal';
+        var layer_KlungkungAgriKebun_25 = new L.geoJson(json_KlungkungAgriKebun_25, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KlungkungAgriKebun_25',
+            layerName: 'layer_KlungkungAgriKebun_25',
+            pane: 'pane_KlungkungAgriKebun_25',
+            onEachFeature: pop_KlungkungAgriKebun_25,
+            style: style_KlungkungAgriKebun_25_0,
+        });
+        bounds_group.addLayer(layer_KlungkungAgriKebun_25);
+        map.addLayer(layer_KlungkungAgriKebun_25);
+        function pop_KlungkungAgriLadang_26(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KlungkungAgriLadang_26_0() {
+            return {
+                pane: 'pane_KlungkungAgriLadang_26',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KlungkungAgriLadang_26');
+        map.getPane('pane_KlungkungAgriLadang_26').style.zIndex = 426;
+        map.getPane('pane_KlungkungAgriLadang_26').style['mix-blend-mode'] = 'normal';
+        var layer_KlungkungAgriLadang_26 = new L.geoJson(json_KlungkungAgriLadang_26, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KlungkungAgriLadang_26',
+            layerName: 'layer_KlungkungAgriLadang_26',
+            pane: 'pane_KlungkungAgriLadang_26',
+            onEachFeature: pop_KlungkungAgriLadang_26,
+            style: style_KlungkungAgriLadang_26_0,
+        });
+        bounds_group.addLayer(layer_KlungkungAgriLadang_26);
+        map.addLayer(layer_KlungkungAgriLadang_26);
+        function pop_KlungkungAgriSawah_27(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_KlungkungAgriSawah_27_0() {
+            return {
+                pane: 'pane_KlungkungAgriSawah_27',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_KlungkungAgriSawah_27');
+        map.getPane('pane_KlungkungAgriSawah_27').style.zIndex = 427;
+        map.getPane('pane_KlungkungAgriSawah_27').style['mix-blend-mode'] = 'normal';
+        var layer_KlungkungAgriSawah_27 = new L.geoJson(json_KlungkungAgriSawah_27, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_KlungkungAgriSawah_27',
+            layerName: 'layer_KlungkungAgriSawah_27',
+            pane: 'pane_KlungkungAgriSawah_27',
+            onEachFeature: pop_KlungkungAgriSawah_27,
+            style: style_KlungkungAgriSawah_27_0,
+        });
+        bounds_group.addLayer(layer_KlungkungAgriSawah_27);
+        map.addLayer(layer_KlungkungAgriSawah_27);
+        function pop_Klungkung_28(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Klungkung_28_0() {
+            return {
+                pane: 'pane_Klungkung_28',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,127,0,0.34509803921568627)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Klungkung_28');
+        map.getPane('pane_Klungkung_28').style.zIndex = 428;
+        map.getPane('pane_Klungkung_28').style['mix-blend-mode'] = 'normal';
+        var layer_Klungkung_28 = new L.geoJson(json_Klungkung_28, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Klungkung_28',
+            layerName: 'layer_Klungkung_28',
+            pane: 'pane_Klungkung_28',
+            onEachFeature: pop_Klungkung_28,
+            style: style_Klungkung_28_0,
+        });
+        bounds_group.addLayer(layer_Klungkung_28);
+        map.addLayer(layer_Klungkung_28);
+        function pop_BadungAgriKebun_29(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BadungAgriKebun_29_0() {
+            return {
+                pane: 'pane_BadungAgriKebun_29',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BadungAgriKebun_29');
+        map.getPane('pane_BadungAgriKebun_29').style.zIndex = 429;
+        map.getPane('pane_BadungAgriKebun_29').style['mix-blend-mode'] = 'normal';
+        var layer_BadungAgriKebun_29 = new L.geoJson(json_BadungAgriKebun_29, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BadungAgriKebun_29',
+            layerName: 'layer_BadungAgriKebun_29',
+            pane: 'pane_BadungAgriKebun_29',
+            onEachFeature: pop_BadungAgriKebun_29,
+            style: style_BadungAgriKebun_29_0,
+        });
+        bounds_group.addLayer(layer_BadungAgriKebun_29);
+        map.addLayer(layer_BadungAgriKebun_29);
+        function pop_BadungAgriLadang_30(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BadungAgriLadang_30_0() {
+            return {
+                pane: 'pane_BadungAgriLadang_30',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BadungAgriLadang_30');
+        map.getPane('pane_BadungAgriLadang_30').style.zIndex = 430;
+        map.getPane('pane_BadungAgriLadang_30').style['mix-blend-mode'] = 'normal';
+        var layer_BadungAgriLadang_30 = new L.geoJson(json_BadungAgriLadang_30, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BadungAgriLadang_30',
+            layerName: 'layer_BadungAgriLadang_30',
+            pane: 'pane_BadungAgriLadang_30',
+            onEachFeature: pop_BadungAgriLadang_30,
+            style: style_BadungAgriLadang_30_0,
+        });
+        bounds_group.addLayer(layer_BadungAgriLadang_30);
+        map.addLayer(layer_BadungAgriLadang_30);
+        function pop_BadungAgriSawah_31(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_BadungAgriSawah_31_0() {
+            return {
+                pane: 'pane_BadungAgriSawah_31',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_BadungAgriSawah_31');
+        map.getPane('pane_BadungAgriSawah_31').style.zIndex = 431;
+        map.getPane('pane_BadungAgriSawah_31').style['mix-blend-mode'] = 'normal';
+        var layer_BadungAgriSawah_31 = new L.geoJson(json_BadungAgriSawah_31, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_BadungAgriSawah_31',
+            layerName: 'layer_BadungAgriSawah_31',
+            pane: 'pane_BadungAgriSawah_31',
+            onEachFeature: pop_BadungAgriSawah_31,
+            style: style_BadungAgriSawah_31_0,
+        });
+        bounds_group.addLayer(layer_BadungAgriSawah_31);
+        map.addLayer(layer_BadungAgriSawah_31);
+        function pop_Badung_32(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Badung_32_0() {
+            return {
+                pane: 'pane_Badung_32',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(89,254,0,0.4588235294117647)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Badung_32');
+        map.getPane('pane_Badung_32').style.zIndex = 432;
+        map.getPane('pane_Badung_32').style['mix-blend-mode'] = 'normal';
+        var layer_Badung_32 = new L.geoJson(json_Badung_32, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Badung_32',
+            layerName: 'layer_Badung_32',
+            pane: 'pane_Badung_32',
+            onEachFeature: pop_Badung_32,
+            style: style_Badung_32_0,
+        });
+        bounds_group.addLayer(layer_Badung_32);
+        map.addLayer(layer_Badung_32);
+        function pop_TabananAgriKebun_33(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_TabananAgriKebun_33_0() {
+            return {
+                pane: 'pane_TabananAgriKebun_33',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(2,134,0,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_TabananAgriKebun_33');
+        map.getPane('pane_TabananAgriKebun_33').style.zIndex = 433;
+        map.getPane('pane_TabananAgriKebun_33').style['mix-blend-mode'] = 'normal';
+        var layer_TabananAgriKebun_33 = new L.geoJson(json_TabananAgriKebun_33, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_TabananAgriKebun_33',
+            layerName: 'layer_TabananAgriKebun_33',
+            pane: 'pane_TabananAgriKebun_33',
+            onEachFeature: pop_TabananAgriKebun_33,
+            style: style_TabananAgriKebun_33_0,
+        });
+        bounds_group.addLayer(layer_TabananAgriKebun_33);
+        map.addLayer(layer_TabananAgriKebun_33);
+        function pop_TabananAgriLadang_34(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_TabananAgriLadang_34_0() {
+            return {
+                pane: 'pane_TabananAgriLadang_34',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(51,160,44,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_TabananAgriLadang_34');
+        map.getPane('pane_TabananAgriLadang_34').style.zIndex = 434;
+        map.getPane('pane_TabananAgriLadang_34').style['mix-blend-mode'] = 'normal';
+        var layer_TabananAgriLadang_34 = new L.geoJson(json_TabananAgriLadang_34, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_TabananAgriLadang_34',
+            layerName: 'layer_TabananAgriLadang_34',
+            pane: 'pane_TabananAgriLadang_34',
+            onEachFeature: pop_TabananAgriLadang_34,
+            style: style_TabananAgriLadang_34_0,
+        });
+        bounds_group.addLayer(layer_TabananAgriLadang_34);
+        map.addLayer(layer_TabananAgriLadang_34);
+        function pop_TabananAgriSawah_35(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_TabananAgriSawah_35_0() {
+            return {
+                pane: 'pane_TabananAgriSawah_35',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,223,138,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_TabananAgriSawah_35');
+        map.getPane('pane_TabananAgriSawah_35').style.zIndex = 435;
+        map.getPane('pane_TabananAgriSawah_35').style['mix-blend-mode'] = 'normal';
+        var layer_TabananAgriSawah_35 = new L.geoJson(json_TabananAgriSawah_35, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_TabananAgriSawah_35',
+            layerName: 'layer_TabananAgriSawah_35',
+            pane: 'pane_TabananAgriSawah_35',
+            onEachFeature: pop_TabananAgriSawah_35,
+            style: style_TabananAgriSawah_35_0,
+        });
+        bounds_group.addLayer(layer_TabananAgriSawah_35);
+        map.addLayer(layer_TabananAgriSawah_35);
+        function pop_Tabanan_36(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+        }
+
+        function style_Tabanan_36_0() {
+            return {
+                pane: 'pane_Tabanan_36',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(227,26,28,0.2901960784313726)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_Tabanan_36');
+        map.getPane('pane_Tabanan_36').style.zIndex = 436;
+        map.getPane('pane_Tabanan_36').style['mix-blend-mode'] = 'normal';
+        var layer_Tabanan_36 = new L.geoJson(json_Tabanan_36, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Tabanan_36',
+            layerName: 'layer_Tabanan_36',
+            pane: 'pane_Tabanan_36',
+            onEachFeature: pop_Tabanan_36,
+            style: style_Tabanan_36_0,
+        });
+        bounds_group.addLayer(layer_Tabanan_36);
+        map.addLayer(layer_Tabanan_36);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'<img src="legend/Tabanan_36.png" /> Tabanan': layer_Tabanan_36,'<img src="legend/TabananAgriSawah_35.png" /> (Tabanan) Agri Sawah': layer_TabananAgriSawah_35,'<img src="legend/TabananAgriLadang_34.png" /> (Tabanan) Agri Ladang': layer_TabananAgriLadang_34,'<img src="legend/TabananAgriKebun_33.png" /> (Tabanan) Agri Kebun': layer_TabananAgriKebun_33,'<img src="legend/Badung_32.png" /> Badung': layer_Badung_32,'<img src="legend/BadungAgriSawah_31.png" /> (Badung) Agri Sawah': layer_BadungAgriSawah_31,'<img src="legend/BadungAgriLadang_30.png" /> (Badung) Agri Ladang': layer_BadungAgriLadang_30,'<img src="legend/BadungAgriKebun_29.png" /> (Badung) Agri Kebun': layer_BadungAgriKebun_29,'<img src="legend/Klungkung_28.png" /> Klungkung': layer_Klungkung_28,'<img src="legend/KlungkungAgriSawah_27.png" /> (Klungkung) Agri Sawah': layer_KlungkungAgriSawah_27,'<img src="legend/KlungkungAgriLadang_26.png" /> (Klungkung) Agri Ladang': layer_KlungkungAgriLadang_26,'<img src="legend/KlungkungAgriKebun_25.png" /> (Klungkung) Agri Kebun': layer_KlungkungAgriKebun_25,'<img src="legend/Karangasem_24.png" /> Karangasem': layer_Karangasem_24,'<img src="legend/KarangasemAgriSawah_23.png" /> (Karangasem) Agri Sawah': layer_KarangasemAgriSawah_23,'<img src="legend/KarangasemAgriLadang_22.png" /> (Karangasem) Agri Ladang': layer_KarangasemAgriLadang_22,'<img src="legend/KarangasemAgriKebun_21.png" /> (Karangasem) Agri Kebun': layer_KarangasemAgriKebun_21,'<img src="legend/Jembrana_20.png" /> Jembrana': layer_Jembrana_20,'<img src="legend/JembranaAgriSawah_19.png" /> (Jembrana) Agri Sawah': layer_JembranaAgriSawah_19,'<img src="legend/JembranaAgriLadang_18.png" /> (Jembrana) Agri Ladang': layer_JembranaAgriLadang_18,'<img src="legend/JembranaAgriKebun_17.png" /> (Jembrana) Agri Kebun': layer_JembranaAgriKebun_17,'<img src="legend/Gianyar_16.png" /> Gianyar': layer_Gianyar_16,'<img src="legend/GianyarAgriSawah_15.png" /> (Gianyar) Agri Sawah': layer_GianyarAgriSawah_15,'<img src="legend/GianyarAgriLadang_14.png" /> (Gianyar) Agri Ladang': layer_GianyarAgriLadang_14,'<img src="legend/GianyarAgriKebun_13.png" /> (Gianyar) Agri Kebun': layer_GianyarAgriKebun_13,'<img src="legend/Denpasar_12.png" /> Denpasar': layer_Denpasar_12,'<img src="legend/DenpasarAgriSawah_11.png" /> (Denpasar) Agri Sawah': layer_DenpasarAgriSawah_11,'<img src="legend/DenpasarAgriLadang_10.png" /> (Denpasar) Agri Ladang': layer_DenpasarAgriLadang_10,'<img src="legend/DenpasarAgriKebun_9.png" /> (Denpasar) Agri Kebun': layer_DenpasarAgriKebun_9,'<img src="legend/Buleleng_8.png" /> Buleleng': layer_Buleleng_8,'<img src="legend/BulelengAgriSawah_7.png" /> (Buleleng) Agri Sawah': layer_BulelengAgriSawah_7,'<img src="legend/BulelengAgriLadang_6.png" /> (Buleleng) Agri Ladang': layer_BulelengAgriLadang_6,'<img src="legend/BulelengAgriKebun_5.png" /> (Buleleng) Agri Kebun': layer_BulelengAgriKebun_5,'<img src="legend/Bangli_4.png" /> Bangli': layer_Bangli_4,'<img src="legend/BangliAgriSawah_3.png" /> (Bangli) Agri Sawah': layer_BangliAgriSawah_3,'<img src="legend/BangliAgriLadang_2.png" /> (Bangli) Agri Ladang': layer_BangliAgriLadang_2,'<img src="legend/BangliAgriKebun_1.png" /> (Bangli) Agri Kebun': layer_BangliAgriKebun_1,"Google Satellite": layer_GoogleSatellite_0,}).addTo(map);
+        setBounds();
+        resetLabels([layer_Bangli_4,layer_Badung_32]);
+        map.on("zoomend", function(){
+            resetLabels([layer_Bangli_4,layer_Badung_32]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_Bangli_4,layer_Badung_32]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_Bangli_4,layer_Badung_32]);
+        });
+        </script>
+    </body>
+</html>
